@@ -1,9 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
 import re
-import time
+import time 
 
-# --- Configuration & Styling ---
 st.set_page_config(page_title="ScamSentinel: Live Gemini Honeypot", page_icon="🛡️", layout="wide")
 
 st.markdown("""
@@ -14,7 +13,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- Logic: The Intelligence Extraction Engine ---
 class IntelligenceExtractor:
     def __init__(self):
         self.extracted_data = {
@@ -43,7 +41,6 @@ class IntelligenceExtractor:
 
         return self.extracted_data
 
-# --- Logic: The Gemini AI Defender ---
 def get_gemini_response(api_key, conversation_history, user_input):
     try:
         genai.configure(api_key=api_key)
@@ -90,7 +87,7 @@ if st.sidebar.button("Clear Chat"):
 st.title("🛡️ ScamSentinel: Interactive Honeypot")
 st.markdown("### Test Mode: YOU act as the Scammer. The AI acts as the Victim.")
 
-# Initialize Session State
+# Initialize Session State for the 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "extractor" not in st.session_state:
@@ -98,7 +95,6 @@ if "extractor" not in st.session_state:
 
 col1, col2 = st.columns([2, 1])
 
-# --- Chat Column ---
 with col1:
     st.subheader("💬 Live Interaction")
     
