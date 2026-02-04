@@ -16,14 +16,22 @@ st.set_page_config(
 
 # --- ASSETS & ANIMATIONS ---
 def load_lottieurl(url: str):
-    r = requests.get(url)
-    if r.status_code != 200:
+    try:
+        r = requests.get(url, timeout=5) # Add a timeout
+        if r.status_code != 200:
+            return None
+        return r.json()
+    except Exception:
         return None
-    return r.json()
 
 # Load assets (Shield & Scanning Radar)
 lottie_shield = load_lottieurl("https://lottie.host/932e655a-e7f7-466d-8868-245842c9533b/3s2t3a9k2.json")
 lottie_scanning = load_lottieurl("https://assets10.lottiefiles.com/packages/lf20_w51pcehl.json")
+
+if lottie_shield:
+    st_lottie(lottie_shield, height=150, key="shield_anim")
+else:
+    st.info("🛡️ (Shield Animation Offline)")
 
 # --- THEME ENGINE (CSS) ---
 # We use Session State to hold the theme preference
