@@ -1,8 +1,10 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types # Required for system instructions
 import re
 import time 
 
+# --- Configuration & Styling ---
 st.set_page_config(page_title="ScamSentinel: Live Gemini Honeypot", page_icon="🛡️", layout="wide")
 
 st.markdown("""
@@ -23,19 +25,15 @@ class IntelligenceExtractor:
         }
 
     def scan(self, text):
-        # 1. Extract UPI IDs (e.g., scammer@okicici)
         upi_pattern = r'[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}'
         found_upis = re.findall(upi_pattern, text)
         self.extracted_data["upi_ids"].update(found_upis)
 
-        # 2. Extract URLs (e.g., http://fake-bank.com)
         url_pattern = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
         found_urls = re.findall(url_pattern, text)
         self.extracted_data["phishing_links"].update(found_urls)
         
-        # 3. Extract Phone Numbers (Simple Pattern)
         phone_pattern = r'\+?[0-9]{10,12}'
-        # Filter to avoid capturing purely random numbers, usually phone #s appear with context, but for now simple regex
         found_phones = re.findall(phone_pattern, text)
         self.extracted_data["phone_numbers"].update(found_phones)
 
@@ -43,9 +41,10 @@ class IntelligenceExtractor:
 
 def get_gemini_response(api_key, conversation_history, user_input):
     try:
-        genai.configure(api_key=api_key)
+        # 1. Initialize the modern Client
+        client = genai.Client(api_key=api_key)
         
-        # System Prompt: Defines the AI's "Persona" (The Victim)
+        # 2. Define the System Instruction (Persona)
         system_instruction = """
         You are a defensive AI Honeypot designed to waste a scammer's time. 
         Your Persona: You are an elderly, non-technical person named 'Amit'. 
@@ -56,19 +55,20 @@ def get_gemini_response(api_key, conversation_history, user_input):
         3. Deliberately make small mistakes (e.g., "I clicked the button but nothing happened").
         4. Ask many clarifying questions to prolong the conversation.
         5. Your goal is to get the scammer to reveal more banking details or links.
-        
-        Respond to the latest message in character.
         """
         
-        # Build the model
-        model = genai.GenerativeModel('gemini-pro')
+        # 3. Call the modern model (Gemini 3 Flash is current for 2026)
+        model_id = "gemini-3-flash-preview"
         
-        # Construct chat context
-        # Gemini expects history in a specific format, but for simplicity in this stateless app,
-        # we will concatenate the prompt.
-        full_prompt = f"{system_instruction}\n\nCONVERSATION HISTORY:\n{conversation_history}\n\nSCAMMER SAYS: {user_input}\n\nAMIT (YOU) SAYS:"
+        full_prompt = f"CONVERSATION HISTORY:\n{conversation_history}\n\nSCAMMER SAYS: {user_input}\n\nAMIT (YOU) SAYS:"
         
-        response = model.generate_content(full_prompt)
+        response = client.models.generate_content(
+            model=model_id,
+            contents=full_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction # New standard for personas
+            )
+        )
         return response.text
     except Exception as e:
         return f"⚠️ Error: {str(e)}"
@@ -87,7 +87,6 @@ if st.sidebar.button("Clear Chat"):
 st.title("🛡️ ScamSentinel: Interactive Honeypot")
 st.markdown("### Test Mode: YOU act as the Scammer. The AI acts as the Victim.")
 
-# Initialize Session State for the 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "extractor" not in st.session_state:
@@ -97,33 +96,24 @@ col1, col2 = st.columns([2, 1])
 
 with col1:
     st.subheader("💬 Live Interaction")
-    
-    # Display previous chat
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Chat Input
-    if prompt := st.chat_input("Type a scam message (e.g., 'Pay electricity bill now or power cut')"):
+    if prompt := st.chat_input("Type a scam message..."):
         if not api_key:
-            st.error("Please enter your Gemini API Key in the sidebar first!")
+            st.error("Please enter your Gemini API Key first!")
         else:
-            # 1. User (Scammer) Message
             st.session_state.messages.append({"role": "user", "content": prompt})
             with st.chat_message("user"):
                 st.markdown(prompt)
 
-            # 2. Extract Intel from User Message
             st.session_state.extractor.scan(prompt)
 
-            # 3. AI (Victim) Response
             with st.spinner("Agent is formulating a strategy..."):
-                # Convert list of dicts to string for history
                 history_text = "\n".join([f"{m['role'].upper()}: {m['content']}" for m in st.session_state.messages])
-                
                 ai_reply = get_gemini_response(api_key, history_text, prompt)
                 
-                # Simulate "typing" delay for realism
                 time.sleep(1) 
                 
                 st.session_state.messages.append({"role": "assistant", "content": ai_reply})
@@ -133,11 +123,8 @@ with col1:
 # --- Intelligence Column ---
 with col2:
     st.subheader("🕵️ Real-Time Intelligence")
-    st.markdown("As you type, the system analyzes your text for IOCs (Indicators of Compromise).")
-    
     data = st.session_state.extractor.extracted_data
     
-    # Display UPIs
     if data["upi_ids"]:
         st.markdown('<div class="report-box">', unsafe_allow_html=True)
         st.write("💰 **Captured UPI IDs:**")
@@ -145,7 +132,6 @@ with col2:
             st.code(upi, language="text")
         st.markdown('</div>', unsafe_allow_html=True)
         
-    # Display Links
     if data["phishing_links"]:
         st.markdown('<div class="report-box">', unsafe_allow_html=True)
         st.write("🔗 **Captured Malicious Links:**")
@@ -153,6 +139,5 @@ with col2:
             st.code(link, language="text")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Empty State
     if not data["upi_ids"] and not data["phishing_links"]:
-        st.info("No threats detected yet. Try sending a fake UPI ID or Link.")
+        st.info("No threats detected yet.")
