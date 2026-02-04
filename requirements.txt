@@ -1,2 +1,4 @@
-google-genai
 streamlit
+google-genai
+streamlit-lottie
+requests
