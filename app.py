@@ -6,7 +6,6 @@ import time
 import requests
 from streamlit_lottie import st_lottie
 
-# --- PAGE CONFIGURATION ---
 st.set_page_config(
     page_title="ScamSentinel | AI Defense System",
     page_icon="🛡️",
@@ -14,7 +13,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ASSETS & ANIMATIONS (WITH SAFETY WRAPPERS) ---
 def load_lottieurl(url: str):
     try:
         r = requests.get(url, timeout=5) 
@@ -24,7 +22,6 @@ def load_lottieurl(url: str):
     except Exception:
         return None
 
-# Loading updated 2026-stable Lottie links
 lottie_shield = load_lottieurl("https://lottie.host/932e655a-e7f7-466d-8868-245842c9533b/3s2t3a9k2.json")
 lottie_scanning = load_lottieurl("https://lottie.host/85501865-0466-486a-8531-98781912f22b/O6Kq0B3D9h.json")
 
@@ -134,7 +131,6 @@ with col_intel:
     st.subheader("📡 Threat Intelligence")
     data = st.session_state.extractor.extracted_data
     
-    # Visual Metrics
     m1, m2 = st.columns(2)
     m1.markdown(f'<div class="intel-card"><div class="metric-value">{len(data["upi_ids"])}</div>UPI IDs</div>', unsafe_allow_html=True)
     m2.markdown(f'<div class="intel-card"><div class="metric-value">{len(data["phishing_links"])}</div>Links</div>', unsafe_allow_html=True)
