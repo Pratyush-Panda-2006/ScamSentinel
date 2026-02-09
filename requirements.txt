@@ -2,3 +2,5 @@ streamlit
 google-genai
 streamlit-lottie
 requests
+streamlit-audiorecorder
+gTTS
