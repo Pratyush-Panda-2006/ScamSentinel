@@ -4,3 +4,4 @@ streamlit-lottie
 requests
 streamlit-audiorecorder
 gTTS
+ffmpeg
