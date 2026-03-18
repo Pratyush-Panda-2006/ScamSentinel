@@ -25,7 +25,7 @@ def load_lottieurl(url: str):
 lottie_shield = load_lottieurl("https://lottie.host/932e655a-e7f7-466d-8868-245842c9533b/3s2t3a9k2.json")
 lottie_scanning = load_lottieurl("https://lottie.host/85501865-0466-486a-8531-98781912f22b/O6Kq0B3D9h.json")
 
-# --- THEME ENGINE (CSS) ---
+
 if 'theme' not in st.session_state:
     st.session_state.theme = 'Dark'
 
@@ -71,7 +71,6 @@ def get_gemini_response(api_key, conversation_history, user_input):
         client = genai.Client(api_key=api_key)
         system_instruction = "You are an elderly, non-technical victim named Amit. Be confused and waste the scammer's time to get their bank details."
         
-        # FIX: Using the correct 2026 stable model name
         model_id = "gemini-3-flash-preview" 
         
         full_prompt = f"HISTORY:\n{conversation_history}\n\nSCAMMER: {user_input}\n\nAMIT:"
@@ -84,7 +83,6 @@ def get_gemini_response(api_key, conversation_history, user_input):
     except Exception as e:
         return f"⚠️ Connection Error: {str(e)}"
 
-# --- SIDEBAR UI ---
 with st.sidebar:
     if lottie_shield:
         st_lottie(lottie_shield, height=150, key="shield_anim")
@@ -131,7 +129,6 @@ with col_intel:
     st.subheader("📡 Threat Intelligence")
     data = st.session_state.extractor.extracted_data
     
-    # Visual Metrics
     m1, m2 = st.columns(2)
     m1.markdown(f'<div class="intel-card"><div class="metric-value">{len(data["upi_ids"])}</div>UPI IDs</div>', unsafe_allow_html=True)
     m2.markdown(f'<div class="intel-card"><div class="metric-value">{len(data["phishing_links"])}</div>Links</div>', unsafe_allow_html=True)
